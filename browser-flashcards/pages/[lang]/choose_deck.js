@@ -1,11 +1,9 @@
 import Header from '../../components/Header'
-import Footer from '../../components/Footer'
 import { useMemo, useState, useContext, createContext, useRef } from 'react'
-import { faCheckCircle, faXmarkCircle, faArrowLeft } from '@fortawesome/free-solid-svg-icons'
+import { faCheckCircle, faXmarkCircle } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import natural from 'natural'
 import tag_names from '../../lib/tag_names'
-import Link from 'next/link'
 import { useRouter } from 'next/router'
 import Tooltip from '../../components/Tooltip'
 import { isValidLanguage, getLanguage } from '../../lib/languages'
@@ -32,7 +30,7 @@ const Card = ({ listOfWords, title, key }) => {
                     setClicked(false)
                 }
             }}
-            className={`bg-gray-200 transition-colors duration-300 px-6 py-4 relative hover:bg-gray-300 flex w-auto items-center justify-center text-2xl phone:text-lg shadow-xl text-black rounded-lg ${clicked && 'border-4 border-indigo-600'}`}
+            className={`bg-gray-200 transition-colors duration-300 px-6 py-4 relative hover:bg-gray-300 flex w-auto items-center justify-center text-2xl phone:text-lg shadow-xl text-black ${clicked && 'border-4 border-indigo-600'}`}
         >
             <p className={`${hover && 'blur-sm'}`}>{title}</p>
             {hover && <span className="absolute flex justify-evenly">
@@ -65,13 +63,6 @@ export default function ChooseDeck({ wordBuckets, lang }) {
     return (
         <div className="container m-auto px-4">
             <Header lang={lang} />
-
-            <Link href={`/${lang}`}>
-                <a className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors duration-200 mt-2">
-                    <FontAwesomeIcon icon={faArrowLeft} /> Back to {language.label}
-                </a>
-            </Link>
-
             <h1 className='text-4xl phone:text-3xl font-bold text-center py-12'>Pick word groups for your {language.label} deck</h1>
             <div>
                 <SelectListContext.Provider value={memoizedValues}>
@@ -116,7 +107,6 @@ export default function ChooseDeck({ wordBuckets, lang }) {
             >
                 <span>Create deck</span>
             </button>
-            <Footer />
         </div>
     )
 }

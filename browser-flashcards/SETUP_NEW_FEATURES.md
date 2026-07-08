@@ -1,124 +1,73 @@
-# New features: Excel word source + custom quizzes (no paid API)
+# Multi-language sections (Kikuyu + Xhosa), notes, and mobile layout
 
-## What changed
+## What changed in this version
 
-- **Word/translation source**: instead of the old random Japanese-word stub,
-  the app reads real lessons from an Excel file on your machine via a
-  server-side API route (`pages/api/lessons.js` + `lib/readExcel.js`).
-- **Quiz mode**: `/lessons` lists every lesson (one per Excel sheet) plus
-  any custom quizzes you create, and links to `/quiz` to run them.
-- **Custom generator quizzes**: `/lessons/new` lets you define quizzes that
-  aren't static word lists — currently: "random number in a range" (e.g.
-  numbers 0–10,000 in Swahili). Saved locally in your browser (IndexedDB).
-- **Answer checking — no paid API**: `pages/api/check-answer.js` checks
-  answers in two free steps:
-  1. **Local match** against a known-correct answer (accent/case/
-     punctuation-insensitive) — instant, no network call.
-  2. **Free translation fallback** (`lib/freeTranslate.js`) using the same
-     free, unofficial Google Translate endpoint that free translator sites
-     run on top of — no API key, no cost. Only used if step 1 doesn't
-     match.
-  3. **Swahili numbers are handled without translation at all** —
-     `lib/numberWords/swahili.js` is a rule-based number-to-words function,
-     so the number-range quiz never needs an external call.
+1. **Two full language sections, same app** — Kikuyu and Xhosa each get an
+   identical set of pages, generated from one shared codebase:
+   - `/kikuyu` and `/xhosa` — language home (paste a word list/paragraph to
+     auto-generate a flashcard deck, plus quick links to the 3 sections below)
+   - `/kikuyu/lessons` and `/xhosa/lessons` — one lesson card per sheet in
+     that language's Excel file, plus any custom quizzes you add
+   - `/kikuyu/collection` and `/xhosa/collection` — saved flashcard decks,
+     kept separate per language
+   - `/kikuyu/notes` and `/xhosa/notes` — new: a notes page per language
 
-I looked into using translatewatu.com directly: it doesn't have a public
-API, it's a UI wrapper around Google's translation engine ("Powered by
-Google Neural Machine Translation" per their own page). Scraping their
-frontend would be fragile and likely against their terms, so instead this
-hits the same underlying free engine directly.
+   Adding a third language later means adding one entry to
+   `lib/languages.js` and dropping in an Excel file — no other code changes.
 
-## 1. Install the new dependency
+2. **Notes, saved as markdown files** — since there's no database yet,
+   notes are stored as plain `.md` files on disk:
+   `data/notes/<language>/<note-id>.md`. Each file is just
+   `# Title` followed by your markdown content, so you can also open/edit
+   them directly in any text editor if you want. The API is in
+   `pages/api/notes.js` / `lib/notes.js`.
 
-```
-npm install
-```
+3. **Per-language Excel files** — instead of one global `EXCEL_FILE_PATH`,
+   each language now has its own file:
+   - `data/excel/kikuyu.xlsx`
+   - `data/excel/xhosa.xlsx`
+   Just replace these files with your own workbook (same sheet-per-lesson
+   format as before — see below) — no restart needed, `/api/lessons` reads
+   the file fresh on every request. If you'd rather keep the file
+   somewhere else on disk, set `EXCEL_FILE_PATH_KIKUYU` /
+   `EXCEL_FILE_PATH_XHOSA` in `.env.local`.
 
-(`xlsx` was added to `package.json` to read your Excel file. No other new
-dependencies — no Anthropic SDK, no API key needed anymore.)
+4. **Mobile layout fixes** — the `container` class was previously clamping
+   to a fixed 300px width on every phone screen (an artifact of reusing
+   the `phone: 300px` breakpoint for the container's max-width too), which
+   squeezed all page content into a narrow column. This is fixed in
+   `tailwind.config.js` (container now stays fluid until tablet width), a
+   proper `<meta name="viewport">` tag was added in `pages/_document.js`,
+   and the paste-word-list input, quiz screen, notes editor, and header
+   nav all got mobile-specific layout tweaks (stacking instead of
+   squeezing, full-width buttons, wrapping nav).
 
-## 2. Set up your `.env.local`
+## Excel file format (per language)
 
-```
-cp .env.local.example .env.local
-```
-
-Then edit `.env.local`:
-
-```
-EXCEL_FILE_PATH=/absolute/path/to/your/words.xlsx
-DEFAULT_TARGET_LANGUAGE=Swahili
-```
-
-That's the whole config — no API keys.
-
-## 3. Format your Excel file
-
-- **One sheet per lesson/group.** The sheet name becomes the lesson title
-  (e.g. "Numbers 0-100", "Greetings", "Family").
-- Each sheet needs a header row with at least `Word` and `Translation`
-  columns. An optional `Language` column overrides `DEFAULT_TARGET_LANGUAGE`
-  for that row.
-
-Example sheet named "Greetings":
+Unchanged from before — one sheet per lesson, header row with at least
+`Word` and `Translation`, optional `Language` column:
 
 | Word      | Translation | Language |
 |-----------|-------------|----------|
-| Hello     | Jambo       | Swahili  |
-| Thank you | Asante      | Swahili  |
+| Hello     | Molo        | Xhosa    |
+| Thank you | Enkosi      | Xhosa    |
 
-## 4. Run it
+## Adding a third language
 
-```
-npm run dev
-```
-
-Go to `/lessons` — you'll see a card for every sheet in your Excel file,
-plus a "+ New custom quiz" button.
-
-## 5. Numbers-style custom quiz
-
-Click "+ New custom quiz", pick a title (e.g. "Swahili numbers 0-10,000"),
-set min/max and target language "Swahili", and save. Every attempt
-generates fresh random numbers in that range, converted to words locally
-by `lib/numberWords/swahili.js` — no external call, no rate limits.
-
-**A caveat on the Swahili number rules**: Swahili numeral conventions have
-some documented variation between sources on exactly where "na" ("and")
-repeats in large compound numbers. I implemented the rule stated most
-explicitly in my research and verified it against several worked examples,
-but it's worth sanity-checking a few outputs against your own knowledge.
-The whole thing is one small, well-commented file if you want to adjust
-the convention.
-
-## Adding another language to the number-range quiz
-
-Only Swahili has a local number generator right now. To add another
-language:
-
-1. Write a `numberToXWords(n)` function (see `lib/numberWords/swahili.js`
-   as a template).
-2. Register it in `lib/numberWords/index.js`.
-
-Without a local generator, the number quiz falls back to the free
-translation endpoint, which — as noted above — is not reliable for
-spelling out arbitrary numbers, so the app will show a caveat in the
-feedback when this happens.
-
-## Adding another language to the free-translation fallback (word-bank lessons)
-
-`lib/languageCodes.js` maps language names to ISO codes for the fallback
-translation check. Add an entry there, or just type the ISO code directly
-(e.g. "sw") in your Excel `Language` column / the quiz form.
+1. Add an entry to `lib/languages.js` (slug, label, iso code, excel
+   filename, accent colors).
+2. Drop an Excel file at `data/excel/<slug>.xlsx`.
+3. That's it — `/<slug>`, `/<slug>/lessons`, `/<slug>/collection`, and
+   `/<slug>/notes` all work immediately, and it shows up in the language
+   picker on the home page and in the header switcher.
 
 ## Notes
 
-- Word-bank quizzes cap at 20 random questions per attempt
-  (`MAX_WORDBANK_QUESTIONS` in `pages/quiz.js`).
-- `/api/lessons` re-reads the Excel file on every request — edit your
-  spreadsheet and refresh `/lessons`, no restart needed.
-- If the free translation endpoint ever becomes unreliable (it's
-  undocumented and can rate-limit), the drop-in replacement is Google
-  Cloud's official Translation API, which has a free monthly quota — swap
-  the implementation inside `lib/freeTranslate.js` and nothing else needs
-  to change.
+- Word-bank quizzes cap at 30 random questions per attempt
+  (`MAX_WORDBANK_QUESTIONS` in `pages/[lang]/quiz.js`).
+- Decks and custom quizzes are stored in the browser (IndexedDB via
+  Dexie) and are scoped per language via a `lang` field.
+- Notes are stored on the server's filesystem, so they're shared across
+  browsers/devices as long as you're running the same server — but they
+  are NOT synced anywhere else. Back up the `data/notes/` folder if you
+  care about keeping them.

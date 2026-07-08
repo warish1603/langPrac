@@ -13,19 +13,37 @@ db.version(2).stores({
    generatorLessons: '++id, title, type'
 });
 
-export const addGeneratorLesson = async (title, type, config) => {
+// v3 adds a `lang` field (language section slug, e.g. "kikuyu"/"xhosa") to
+// both stores so decks and custom quizzes can be scoped per language.
+// Existing rows without a lang are treated as "kikuyu" for backwards
+// compatibility with decks/quizzes created before languages were split out.
+db.version(3).stores({
+   decks: '++id, title, lang',
+   generatorLessons: '++id, title, type, lang'
+}).upgrade(tx => {
+   return Promise.all([
+      tx.table('decks').toCollection().modify(deck => {
+         if (!deck.lang) deck.lang = 'kikuyu'
+      }),
+      tx.table('generatorLessons').toCollection().modify(lesson => {
+         if (!lesson.lang) lesson.lang = 'kikuyu'
+      })
+   ])
+});
+
+export const addGeneratorLesson = async (lang, title, type, config) => {
    try {
        await db.open()
-       return await db.generatorLessons.add({ title, type, config })
+       return await db.generatorLessons.add({ lang, title, type, config })
    } catch (error) {
        console.log(error);
    }
 }
 
-export const getAllGeneratorLessons = async () => {
+export const getAllGeneratorLessons = async (lang) => {
    try {
        await db.open()
-       return await db.generatorLessons.toArray()
+       return await db.generatorLessons.where('lang').equals(lang).toArray()
    } catch (error) {
        console.log(error);
    }
@@ -49,14 +67,15 @@ export const deleteGeneratorLesson = async (id) => {
    }
 }
 
-export const addDeck = async (data, title) => {
+export const addDeck = async (data, title, lang) => {
    // useCallback to add the loading page instead of using useState
    try {
        // Add the new friend!
-       await db.open() 
+       await db.open()
        return await db.decks.add({
-           title, 
-           data
+           title,
+           data,
+           lang
        })
    } catch (error) {
        console.log(error);
@@ -72,11 +91,11 @@ export const deleteDeck = async (id) => {
     }
  }
 
-export const getAllDecks = async () => {
+export const getAllDecks = async (lang) => {
    try {
-       await db.open() 
-       return await db.decks.toArray(arr => arr.map(el => ({
-           id: el.id, 
+       await db.open()
+       return await db.decks.where('lang').equals(lang).toArray(arr => arr.map(el => ({
+           id: el.id,
            title: el.title
        })))
    } catch (error) {

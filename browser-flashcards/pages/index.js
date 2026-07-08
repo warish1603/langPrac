@@ -1,19 +1,12 @@
 import Head from 'next/head'
-import Image from 'next/image'
+import Link from 'next/link'
 import Header from '../components/Header'
-import InputFunction from '../components/Input'
-
-// there will be a word bank where user pastes in a word from a website to the extension UI of this app 
-
-// user will supply a list of words and translated by Google 
-
-// then the user can edit each card one by one 
-
-// before it gets shipped off to Anki or Quizlet. 
+import Footer from '../components/Footer'
+import { LANGUAGE_LIST } from '../lib/languages'
 
 export default function Home() {
   return (
-    <div className="container m-auto">
+    <div className="container m-auto px-4 phone:px-4 tablet:px-6">
       <Head>
         <title>Language flashcard generator</title>
         <meta name="description" content="Language flashcard generator" />
@@ -22,29 +15,30 @@ export default function Home() {
 
       <Header />
 
-      <main className="flex flex-col justify-center" style={{ minHeight: '70vh' }}>
+      <main className="flex flex-col items-center justify-center text-center" style={{ minHeight: '60vh' }}>
         <div>
-          <h1 className="text-slate-900 font-extrabold phone:text-4xl tablet:text-5xl laptop:text-6xl tracking-tight text-center dark:text-white">The flashcard generator for language learners.</h1>
-          <p className='mt-6 text-lg text-slate-600 text-center max-w-3xl mx-auto dark:text-slate-400'>
-            Paste a word list or a paragraph here ! 
+          <h1 className="text-slate-900 font-extrabold phone:text-3xl tablet:text-5xl laptop:text-6xl tracking-tight text-center dark:text-white">
+            The flashcard generator for language learners.
+          </h1>
+          <p className="mt-6 text-lg text-slate-600 text-center max-w-2xl mx-auto dark:text-slate-400">
+            Pick a language to generate flashcards from your Excel word lists, run quizzes, and keep study notes.
           </p>
         </div>
-        <InputFunction/>
 
+        <div className="mt-10 grid phone:grid-cols-1 tablet:grid-cols-2 gap-6 w-full max-w-2xl">
+          {LANGUAGE_LIST.map((lang) => (
+            <Link key={lang.slug} href={`/${lang.slug}`}>
+              <a className={`rounded-2xl shadow-lg hover:shadow-2xl p-8 phone:p-6 text-white ${lang.accent} ${lang.accentHover} transition-all duration-300 hover:-translate-y-1 flex flex-col items-center`}>
+                <span className="text-3xl phone:text-2xl font-bold text-white">{lang.label}</span>
+                <span className="text-sm text-white/80 mt-1">{lang.nativeName}</span>
+                <span className="mt-4 text-sm text-white underline underline-offset-2">Open {lang.label} →</span>
+              </a>
+            </Link>
+          ))}
+        </div>
       </main>
 
-      <footer className="flex px-8 py-8 font-semibold tracking-wider leading-6 justify-center items-center text-black">
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center w-1/5 phone:w-full tablet:w-full justify-evenly tablet:flex-col phone:flex-col"
-        >
-          <span>Powered by{' '}</span>
-          <Image src="/vercel-dark.svg" alt="Vercel Logo" width={72} height={16} />
-        </a>
-      </footer>
+      <Footer />
     </div>
   )
-
 }
