@@ -1,9 +1,9 @@
 import Link from "next/link"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faArrowLeft } from "@fortawesome/free-solid-svg-icons"
-import Editor from "../../../components/Editor";
-import { getLanguage, isValidLanguage } from "../../../lib/languages";
-import { getTranslationLookup } from "../../../lib/readExcel";
+import Editor from "../../components/Editor";
+import { getLanguage, isValidLanguage } from "../../lib/languages";
+import { getTranslationLookup } from "../../lib/readExcel";
 
 export default function NewEditor({ cardDecks, lang }) {
     return (

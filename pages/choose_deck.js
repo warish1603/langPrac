@@ -1,14 +1,14 @@
-import Header from '../../components/Header'
-import Footer from '../../components/Footer'
+import Header from '../components/Header'
+import Footer from '../components/Footer'
 import { useMemo, useState, useContext, createContext, useRef } from 'react'
 import { faCheckCircle, faXmarkCircle, faArrowLeft } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import natural from 'natural'
-import tag_names from '../../lib/tag_names'
+import tag_names from '../lib/tag_names'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
-import Tooltip from '../../components/Tooltip'
-import { isValidLanguage, getLanguage } from '../../lib/languages'
+import Tooltip from '../components/Tooltip'
+import { isValidLanguage, getLanguage } from '../lib/languages'
 
 const SelectListContext = createContext()
 
